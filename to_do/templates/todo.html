@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}TODO Page{% endblock title %}
+
+{% block main-content %}
+<div class="heading-todo">
+  <div>
+    {% for i in data %}
+    <h2>Logedin as <span>{{i.username}}</span></h2>
+    {% endfor %}
+  </div>
+  <div class="btn1">
+    <button><a href="{% url 'logout' %}">LogOut</a></button>
+  </div>
+</div>
+
+<br>
+
+<div class="add-task">
+  <div>
+    <h2>Add a New Task</h2>
+    <form action="{% url 'add_todo' %}" method="post">
+      {% csrf_token %}
+      <table>
+        <tr>
+          <td><input type="text" name="title" placeholder="Task Title"></td>
+        </tr>
+        <tr>
+          <td><input type="text" name="description" placeholder="Description"></td>
+        </tr>
+        <tr>
+          <td><input type="number" name="priority" placeholder="Priority"></td>
+        </tr>
+      </table>
+      <div class="btn2">
+        <button type="submit">Add Task</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="your-task">
+  <h2>Your Tasks</h2>
+  <form method="get">
+    <label for="myDropdown">Filter:</label>
+    <select id="myDropdown" name="filter" onchange="this.form.submit()">
+      <option value="All" {% if request.GET.filter == "All" or not request.GET.filter %}selected{% endif %}>All</option>
+      <option value="Pending" {% if request.GET.filter == "Pending" %}selected{% endif %}>Work Pending</option>
+      <option value="Done" {% if request.GET.filter == "Done" %}selected{% endif %}>Work Done</option>
+    </select>
+  </form>
+
+
+  {% if todos %}
+  <table cellpadding="5">
+    <thead>
+      <tr>
+        <th>Priority</th>
+        <th>Title</th>
+        <th>Description</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for todo in todos %}
+      <tr>
+        <td>
+          <p class="priority">{{todo.priority}}</p>
+        </td>
+        <td>
+          <strong>{{ todo.title }}</strong>
+        </td>
+        <td>
+          <div class="description-preview">
+            <span>{{ todo.description|truncatechars:60 }}</span>
+            <a href="#" class="read-more" data-id="{{ todo.id }}">Read More</a>
+          </div>
+
+          <!-- Modal Popup -->
+          <div class="modal" id="modal-{{ todo.id }}">
+            <div class="modal-content">
+              <span class="close" data-id="{{ todo.id }}">&times;</span>
+              <h3>{{ todo.title }}</h3>
+              <p>{{ todo.description }}</p>
+            </div>
+          </div>
+          
+        </td>
+        <td>
+          {% if todo.completed %}
+          <span class="done">✅Done</span>
+          {% else %}
+          <form action="{% url 'mark_done' todo.id %}" method="post" >
+            {% csrf_token %}
+            <button type="submit" class="btn-done">Mark as Done</button>
+          </form>
+          {% endif %}
+        </td>
+        <td>
+          <form action="{% url 'update_todo' todo.id %}" method="get">
+            <button class="btn-edit" type="submit" {% if todo.completed %}disabled{% endif %}>Edit</button>
+          </form>
+        </td>
+        <td>
+          <form action="{% url 'delete_todo' todo.id %}" method="post">
+            {% csrf_token %}
+            <button class="btn-delete" type="submit">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% else %}
+  <p>No tasks yet.</p>
+  {% endif %}
+</div>
+
+
+{% endblock main-content %}

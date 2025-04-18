@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Update Task{% endblock title %}
+
+{% block main-content %}
+<a class="back" href="{% url 'todo' %}">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAsTAAALEwEAmpwYAAAB0UlEQVR4nO3aS4uPcRQH8E/JrZCwcEsuI0MW09hoyNi5LsklNUnEC7DxNizs7SQbKbN02zFj5bpwy60ouYSI0VP/pyYNc1bS+Z9P/V7A99TzPOd3zkMppZRSSinlPzMfZ/AAIziJKbrEajzD2G/nrC6wFi8nCN+ePomtx+u/hG/OkKT68GaS8M0ZlFA/3gbCj2KqZDbiXSB881JcJZlNeB8I/yRj+C34EAj/GCsksxUfA+HvY4lktuNLIPw9LJbMrmD4O1gomT34FvzULZDMPnwPhL+FeZI5EAx/A3MkcwQ/AuGvYbZkjgXDX8EsyZzAz0D4y5gpmeOB4M25iOmSWYbPgfAXME1CQ4Hw5zJeaVuHAgW4hBmSWopPwSKke/5bh4NfgOGMX4DW0WAPcDVjA9Q6GGyBr2dsgVv7g0W4mfES1NobvAaPdNZhKe3G10ARbmecBbR2BKdBd7FIUtuCrXLKYej4cXhkIvyw01iltDm4E2gWIislNRDcCj1Fj6Q2BJeir7BOUv3BIjQ/TfTq0r9CxsYtTNJepXvxIlCEnRJbg+eTFKCZOabW03nz/6kAzQ8V6S3HownCn9dF5uJ0py1uFqanMg9TSymllFJK8W/9AjWgg+AZjk+3AAAAAElFTkSuQmCC"
+        alt="back">
+        Back
+</a>
+
+<div class="update">
+    <h2>Update Task</h2>
+<form method="post">
+    {% csrf_token %}
+    <table>
+        <tr>
+            <td>Task Title:</td>
+            <td><input type="text" name="title" value="{{ todo.title }}" placeholder="{{ todo.title }}"></td>
+        </tr>
+        <tr>
+            <td>Description:</td>
+            <td><input type="text" name="description" value="{{ todo.description }}" placeholder="{{ todo.description }}"></td>
+        </tr>
+        <tr>
+            <td>Priority:</td>
+            <td><input type="number" name="priority" value="{{ todo.priority }}" placeholder="{{ todo.priority }}"></td>
+        </tr>
+    </table>
+    <div class="btn-update">
+        <button type="submit">Update</button>
+    </div>
+</form>
+</div>
+
+{% endblock main-content %}
