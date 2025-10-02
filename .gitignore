@@ -1,0 +1,33 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+env/
+
+# Django local settings and secrets
+*.env
+local_settings.py
+
+# Database files
+*.sqlite3
+
+# Django static and media files
+staticfiles/
+media/
+
+# Migrations (optional: keep if you want versioned migrations)
+# migrations/
+# !migrations/__init__.py
+
+# Logs
+*.log
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

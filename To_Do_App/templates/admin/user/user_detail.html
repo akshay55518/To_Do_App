@@ -1,0 +1,74 @@
+{% extends 'admin/dashboard.html' %}
+{% load static %}
+
+{% block title %}{{ user.username }} - Details{% endblock title %}
+
+{% block admin-main-block %}
+
+<main class="flex-1 p-6 bg-gray-100 min-h-screen">
+    <h1 class="text-3xl font-bold mb-6">{{ user.username|upper }} - Details</h1>
+
+    <!-- Projects -->
+    <div class="bg-white shadow rounded-lg p-6 mb-6">
+        <h2 class="text-xl font-semibold mb-4">Projects Created</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Time Spent</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for project in projects %}
+                    <tr>
+                        <td class="px-6 py-4 text-gray-800">{{ project.name }}</td>
+                        <td class="px-6 py-4 text-gray-800">{{ project.total_time_spent }}</td>
+                        <td class="px-6 py-4 text-gray-800">{{ project.created_at|date:"M d, Y H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="px-6 py-4 text-center text-gray-500">No projects created</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tasks -->
+    <div class="bg-white shadow rounded-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">Tasks Assigned</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task Title</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time Spent</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for task in tasks %}
+                    <tr>
+                        <td class="px-6 py-4 text-gray-800">{{ task.title }}</td>
+                        <td class="px-6 py-4 text-gray-800">{{ task.project.name }}</td>
+                        <td class="px-6 py-4 text-gray-800">{{ task.status|capfirst }}</td>
+                        <td class="px-6 py-4 text-gray-800">{{ task.priority|capfirst }}</td>
+                        <td class="px-6 py-4 text-gray-800">{{ task.time_spent }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">No tasks assigned</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+{% endblock admin-main-block %}

@@ -1,0 +1,45 @@
+{% extends 'admin/dashboard.html' %}
+{% load static %}
+
+{% block title %}Edit Project - Admin Dashboard{% endblock %}
+
+{% block admin-main-block %}
+<main class="flex-1 flex items-center justify-center bg-gray-100 min-h-screen">
+    <div class="w-full max-w-lg">
+        <h1 class="text-3xl font-bold mb-6 text-center">Edit Project</h1>
+
+        <!-- Success/Error Messages -->
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="{% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %} px-4 py-2 rounded mb-2">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="bg-white shadow rounded-lg p-6">
+            <form method="POST" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label for="name" class="block text-gray-700 font-semibold mb-2">Project Name</label>
+                    <input type="text" name="name" id="name" required value="{{ project.name }}"
+                        class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400">
+                </div>
+                <div>
+                    <label for="description" class="block text-gray-700 font-semibold mb-2">Description</label>
+                    <textarea name="description" id="description" rows="4"
+                        class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400">{{ project.description }}</textarea>
+                </div>
+                <div class="text-center flex justify-between items-center">
+                    <a href="{% url 'admin_project_list' %}" 
+                       class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md font-semibold">Back</a>
+                    <button type="submit"
+                        class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-md font-semibold">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+{% endblock admin-main-block %}
