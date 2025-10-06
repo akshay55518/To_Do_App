@@ -1,1 +1,222 @@
-<h1>user dashboard</h1>
+{% extends "base.html" %}
+{% load static %}
+{% load duration_extras %}
+
+
+{% block title %}User Dashboard{% endblock title %}
+
+{% block main-content %}
+
+<!-- Top Navbar -->
+<nav class="w-full bg-white shadow-md flex items-center justify-between px-6 py-3 sticky top-0 z-50">
+    <div class="font-bold text-xl">Dashboard</div>
+
+    <div class="flex space-x-4">
+        <a href="{% url 'user_dashboard' %}"
+            class="px-3 py-2 rounded font-medium hover:bg-gray-200 {% active 'user_dashboard' %}">
+            All Tasks
+        </a>
+        <a href="{% url 'completed_tasks' %}"
+            class="px-3 py-2 rounded font-medium hover:bg-gray-200 {% active 'completed_tasks' %}">
+            Completed
+        </a>
+        <a href="{% url 'incomplete_tasks' %}"
+            class="px-3 py-2 rounded font-medium hover:bg-gray-200 {% active 'incomplete_tasks' %}">
+            Incompleted
+        </a>
+        <a href="{% url 'user_profile' %}"
+            class="px-3 py-2 rounded font-medium hover:bg-gray-200 {% active 'user_profile' %}">
+            Profile
+        </a>
+    </div>
+
+    <div>
+        <a href="{% url 'logout' %}" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded font-medium">
+            Logout
+        </a>
+    </div>
+</nav>
+
+
+{% block user-dashboard-section %}
+<div class="min-h-screen bg-gray-100 p-8">
+    <h1 class="text-3xl bg-gray-100 text-center font-bold mb-6">Hello, {{ user.first_name|default:user.username }}!
+        Welcome to your dashboard.</h1>
+
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white shadow rounded-lg p-6 text-center">
+            <p class="text-gray-500 font-medium">Completed Tasks</p>
+            <p class="text-2xl font-bold text-green-600">{{ completed_count }}</p>
+        </div>
+        <div class="bg-white shadow rounded-lg p-6 text-center">
+            <p class="text-gray-500 font-medium">In Progress</p>
+            <p class="text-2xl font-bold text-yellow-600">{{ in_progress_count }}</p>
+        </div>
+        <div class="bg-white shadow rounded-lg p-6 text-center">
+            <p class="text-gray-500 font-medium">Pending Tasks</p>
+            <p class="text-2xl font-bold text-gray-600">{{ pending_count }}</p>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="p-3 rounded-md text-sm 
+                    {% if message.tags == 'error' %} bg-red-100 text-red-700
+                    {% elif message.tags == 'success' %} bg-green-100 text-green-700
+                    {% else %} bg-blue-100 text-blue-700 {% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Tasks Table -->
+    <div class="space-y-8">
+        {% for project in projects %}
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+            <!-- Project Header -->
+            <div class="flex items-center justify-between bg-gray-100 px-6 py-4">
+                <h2 class="text-xl font-semibold text-gray-800">{{ project.name }}</h2>
+                <span class="text-sm text-gray-500">
+    {{ project.user_tasks|length }} Task{{ project.user_tasks|length|pluralize }}
+</span>
+
+            </div>
+
+            <!-- Tasks Table -->
+            {% if project.tasks.exists %}
+            <div class="p-4 overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time Spent</th>
+                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for task in project.user_tasks %}
+                        <tr>
+                            
+                            <td class="px-6 py-4 text-gray-800 font-medium">{{ task.title }}</td>
+                            <td class="px-6 py-4 text-gray-600">{{ task.description|truncatewords:10 }}</td>
+
+                            <!-- Priority -->
+                            <td class="px-6 py-4">
+                                <span class="px-2 py-1 text-xs rounded 
+                                {% if task.priority == 'high' %} bg-red-100 text-red-600
+                                {% elif task.priority == 'medium' %} bg-yellow-100 text-yellow-600
+                                {% else %} bg-green-100 text-green-600 {% endif %}">
+                                    {{ task.priority|capfirst }}
+                                </span>
+                            </td>
+
+                            <!-- Status -->
+                            <td class="px-6 py-4">
+                                <span class="px-2 py-1 text-xs rounded 
+                                {% if task.status == 'completed' %} bg-green-100 text-green-600
+                                {% elif task.status == 'in_progress' %} bg-blue-100 text-blue-600
+                                {% elif task.status == 'paused' %} bg-yellow-100 text-yellow-600
+                                {% else %} bg-gray-100 text-gray-600 {% endif %}">
+                                    {{ task.status|capfirst }}
+                                </span>
+                            </td>
+
+                            <!-- Timer -->
+                            <td class="px-6 py-4 font-mono text-blue-600">
+                                <span id="timer-{{ task.id }}"
+                                    data-elapsed="{{ task.time_spent.total_seconds|default:0 }}" {% if task.start_time
+                                    and task.status=='in_progress' %} data-start="{{ task.start_time|date:'c' }}" {%
+                                    endif %}>
+                                    {% if task.time_spent %}
+                                    {{ task.time_spent }}
+                                    {% else %}
+                                    00:00:00
+                                    {% endif %}
+                                </span>
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="px-6 py-4 text-center space-x-2">
+                                {% if task.status == 'pending' or task.status == 'paused' %}
+                                <form method="post" action="{% url 'update_task_timer' task.id 'start' %}"
+                                    class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                        class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">
+                                        {% if task.status == 'paused' %}Resume{% else %}Start{% endif %}
+                                    </button>
+                                </form>
+                                {% endif %}
+
+                                {% if task.status == 'in_progress' %}
+                                <form method="post" action="{% url 'update_task_timer' task.id 'pause' %}"
+                                    class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded">Pause</button>
+                                </form>
+                                {% endif %}
+
+                                {% if task.status != 'completed' %}
+                                <form method="post" action="{% url 'update_task_timer' task.id 'stop' %}"
+                                    class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                        class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">Stop</button>
+                                </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-6 text-center text-gray-500">No tasks under this project.</div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="text-center text-gray-500">No projects found.</div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock user-dashboard-section %}
+
+<script>
+    function formatTime(seconds) {
+        const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+        const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+        const s = String(seconds % 60).padStart(2, '0');
+        return `${h}:${m}:${s}`;
+    }
+
+    document.querySelectorAll("[id^='timer-']").forEach(timerEl => {
+        let elapsed = parseInt(timerEl.dataset.elapsed || 0, 10);
+        let startTime = timerEl.dataset.start ? new Date(timerEl.dataset.start) : null;
+
+        function updateTimer() {
+            if (startTime) {
+                const now = new Date();
+                const diff = Math.floor((now - startTime) / 1000);
+                timerEl.textContent = formatTime(elapsed + diff);
+            } else {
+                timerEl.textContent = formatTime(elapsed);
+            }
+        }
+
+        updateTimer();
+        setInterval(updateTimer, 1000);
+    });
+</script>
+
+
+{% endblock main-content %}

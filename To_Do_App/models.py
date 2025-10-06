@@ -23,13 +23,24 @@ class Project(models.Model):
         return self.name
 
     def update_total_time(self):
-        """Recalculate total time spent from all tasks in this project."""
         total = timedelta()
         for task in self.tasks.all():
             if task.time_spent:
                 total += task.time_spent
         self.total_time_spent = total
         self.save()
+        
+    def formatted_total_time(self):
+        """Return human-readable total time like '2h 43m 15s'."""
+        total_seconds = int(self.total_time_spent.total_seconds())
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        if hours > 0:
+            return f"{hours}h {minutes}m"
+        elif minutes > 0:
+            return f"{minutes}m {seconds}s"
+        else:
+            return f"{seconds}s"
 
 
 class ToDo(models.Model):
@@ -42,11 +53,12 @@ class ToDo(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('in_progress', 'In Progress'),
+        ('paused', 'Paused'),
         ('completed', 'Completed'),
     ]
 
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks', null=True, blank=True)
-    assigned_to = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
+    project = models.ForeignKey("Project", on_delete=models.CASCADE, related_name='tasks', null=True, blank=True)
+    assigned_to = models.ForeignKey("User", on_delete=models.CASCADE, related_name='tasks')
     title = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
@@ -55,24 +67,33 @@ class ToDo(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # Timer fields for the task
     start_time = models.DateTimeField(null=True, blank=True)
-    end_time = models.DateTimeField(null=True, blank=True)
-    time_spent = models.DurationField(null=True, blank=True)  # total time spent on task
+    time_spent = models.DurationField(default=timedelta)
 
     def __str__(self):
         return f"{self.title} ({self.priority})"
 
-    # ---------------- Timer methods ----------------
     def start_timer(self):
-        self.start_time = timezone.now()
-        self.save()
+        if not self.start_time:  # only set if not already running
+            self.start_time = timezone.now()
+            self.status = "in_progress"
+            self.save()
+
+    def pause_timer(self):
+        if self.start_time:
+            now = timezone.now()
+            elapsed = now - self.start_time
+            self.time_spent = (self.time_spent or timedelta()) + elapsed
+            self.start_time = None
+            self.save()
+            if self.project:
+                self.project.update_total_time()  # Update total project time
+
 
     def stop_timer(self):
-        if self.start_time:
-            self.end_time = timezone.now()
-            self.time_spent = self.end_time - self.start_time
-            self.save()
-            # Update project total time automatically
-            if self.project:
-                self.project.update_total_time()
+        self.pause_timer()
+        self.status = "completed"
+        self.completed = True
+        self.save()
+        if self.project:
+            self.project.update_total_time()

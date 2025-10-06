@@ -6,8 +6,16 @@ SECRET_KEY = 'django-insecure-sw-8alv4la5q=v2q$b8&carz=jd9cg9xk1b=6h+_ragjm(u509
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://squirrelish-bebe-psychogenetic.ngrok-free.dev",
+]
+
+LOGIN_URL = 'login'
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "noreply@example.com"
 
 # Application definition
 

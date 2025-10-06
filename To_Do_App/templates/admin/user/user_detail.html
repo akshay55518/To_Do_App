@@ -1,5 +1,6 @@
 {% extends 'admin/dashboard.html' %}
 {% load static %}
+{% load duration_extras %}
 
 {% block title %}{{ user.username }} - Details{% endblock title %}
 
@@ -15,25 +16,31 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project Name</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Time Spent</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                        <!-- <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Time Spent
+                        </th> -->
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     {% for project in projects %}
                     <tr>
-                        <td class="px-6 py-4 text-gray-800">{{ project.name }}</td>
-                        <td class="px-6 py-4 text-gray-800">{{ project.total_time_spent }}</td>
-                        <td class="px-6 py-4 text-gray-800">{{ project.created_at|date:"M d, Y H:i" }}</td>
+                        <td class="px-6 py-4 text-gray-800 font-semibold">
+                            <a href="{% url 'admin_project_tasks' project.id %}" class=" text-blue-600 hover:underline">
+                            {{ project.name }}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4 text-gray-600">{{ project.description|truncatewords:15 }}</td>
+                        <!-- <td class="px-6 py-4 text-blue-600 font-mono">{{ project.formatted_total_time }}</td> -->
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="3" class="px-6 py-4 text-center text-gray-500">No projects created</td>
+                        <td colspan="3" class="px-6 py-4 text-center text-gray-500">No projects found.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+
         </div>
     </div>
 
@@ -44,11 +51,16 @@
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task Title</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time Spent</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task
+                            Title</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Project</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Priority</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time
+                            Spent</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -58,7 +70,7 @@
                         <td class="px-6 py-4 text-gray-800">{{ task.project.name }}</td>
                         <td class="px-6 py-4 text-gray-800">{{ task.status|capfirst }}</td>
                         <td class="px-6 py-4 text-gray-800">{{ task.priority|capfirst }}</td>
-                        <td class="px-6 py-4 text-gray-800">{{ task.time_spent }}</td>
+                        <td class="px-6 py-4 text-gray-800">{{ task.time_spent|hhmmss }}</td>
                     </tr>
                     {% empty %}
                     <tr>

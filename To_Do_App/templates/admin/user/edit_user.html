@@ -5,25 +5,27 @@
 
 {% block admin-main-block %}
 
-<main class="flex-1 p-6 bg-gray-100 min-h-screen">
-    <h1 class="text-3xl font-bold mb-6">Edit User</h1>
+<main class="flex-1 p-6 bg-gray-100 min-h-screen flex justify-center items-center">
 
-    <!-- Messages -->
-    {% if messages %}
-        <div class="mb-4">
-            {% for message in messages %}
-                <div class="p-3 rounded-md text-sm 
-                            {% if message.tags == 'error' %} bg-red-100 text-red-700 
-                            {% elif message.tags == 'success' %} bg-green-100 text-green-700 
-                            {% else %} bg-blue-100 text-blue-700 {% endif %}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
+    <div class="w-full max-w-lg bg-white shadow-md rounded-lg p-6 space-y-6">
 
-    <!-- Edit Form -->
-    <div class="bg-white shadow-md rounded-lg p-6 w-full max-w-lg">
+        <h1 class="text-3xl font-bold text-center text-gray-800">Edit User</h1>
+
+        <!-- Messages -->
+        {% if messages %}
+            <div>
+                {% for message in messages %}
+                    <div class="p-3 rounded-md text-sm 
+                                {% if message.tags == 'error' %} bg-red-100 text-red-700 
+                                {% elif message.tags == 'success' %} bg-green-100 text-green-700 
+                                {% else %} bg-blue-100 text-blue-700 {% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Edit Form -->
         <form method="post" class="space-y-5">
             {% csrf_token %}
 
@@ -53,6 +55,7 @@
             </div>
         </form>
     </div>
+
 </main>
 
 {% endblock admin-main-block %}

@@ -2,6 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login as auth_login
 from .models import *
 from django.contrib import messages
+from django.db.models import Case, When, IntegerField
+from datetime import timedelta
+from django.db.models import Prefetch
+from django.shortcuts import render, redirect
+
 
 # Create your views here.
 
@@ -25,7 +30,6 @@ def login(request):
             return redirect('login')
     return render(request, 'auth/login.html')
 
-
 def register(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -43,6 +47,28 @@ def register(request):
 def logout(request):
     request.session.flush()
     return redirect('login')
+
+def forget_password(request):
+    if request.method == "POST":
+        email = request.POST.get("email")
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            messages.error(request, "No account found with this email.")
+            return redirect("forget_password")
+        print(
+                f"Password details:\n"
+                f"-----------------\n"
+                f"Username: {user.username}\n"
+                f"Email: {user.email}\n"
+                f"Password: {user.password}\n"
+            )
+        # Optionally show message to user
+        messages.success(request, "Your password has been sent to your registered email (check console).")
+        return redirect("forget_password")
+
+    return render(request, "auth/forget_password.html")
 
 def admin_dashboard(request):
     total_projects = Project.objects.count()
@@ -77,7 +103,6 @@ def admin_approval(request):
             messages.success(request, f"User {user.username} rejected and deleted successfully")
         return redirect('admin_approval')
     return render(request, 'admin/approval.html', {'users': users})
-
 
 # admin Users view
 def user_details(request):
@@ -125,13 +150,20 @@ def delete_user(request, pk):
         user.delete()
         messages.success(request, "User deleted successfully")
         return redirect('user_list')
-
-
-    
+ 
 # admin Projects
 def admin_project_list(request):
     projects = Project.objects.all()
     return render(request, 'admin/project/projects.html', {'projects': projects})
+
+def admin_project_tasks(request, pk):
+    project = get_object_or_404(Project, pk=pk)
+    tasks = ToDo.objects.filter(project=project).select_related('assigned_to')
+
+    return render(request, "admin/project/project_tasks.html", {
+        "project": project,
+        "tasks": tasks
+    })  
     
 def add_projects(request):
     if request.method == 'POST':
@@ -178,8 +210,8 @@ def add_task(request):
         project_id = request.POST.get('project')
         assigned_to_id = request.POST.get('assigned_to')
         priority = request.POST.get('priority')
-        status = request.POST.get('status')
-
+        status = "pending"
+        
         project = Project.objects.get(pk=project_id) if project_id else None
         assigned_to = User.objects.get(pk=assigned_to_id)
 
@@ -234,5 +266,142 @@ def delete_task(request, pk):
     return redirect('admin_task_list')
 
 
+# user section
 def user_dashboard(request):
-    return render(request, 'user/dashboard.html')
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return redirect("login")
+    user = get_object_or_404(User, pk=user_id)
+    user_tasks_prefetch = Prefetch(
+        'tasks',
+        queryset=ToDo.objects.filter(assigned_to=user),
+        to_attr='user_tasks'
+    )
+    projects = (
+        Project.objects
+        .filter(tasks__assigned_to=user)
+        .prefetch_related(user_tasks_prefetch)
+        .distinct()
+    )
+    tasks = (
+        ToDo.objects
+        .filter(assigned_to=user)
+        .annotate(
+            priority_order=Case(
+                When(priority='high', then=1),
+                When(priority='medium', then=2),
+                When(priority='low', then=3),
+                default=4,
+                output_field=IntegerField(),
+            )
+        )
+        .order_by('priority_order', 'status', 'created_at')
+    )
+    completed_count = 0
+    in_progress_count = 0
+    pending_count = 0
+    total_time = timedelta()
+
+    for task in tasks:
+        if task.status == "completed":
+            completed_count += 1
+        elif task.status in ["in_progress", "paused"]:
+            in_progress_count += 1
+        elif task.status == "pending":
+            pending_count += 1
+        
+        if task.time_spent:
+            total_time += task.time_spent
+
+    context = {
+        "projects": projects,
+        "user": user,
+        "tasks": tasks,
+        "completed_count": completed_count,
+        "in_progress_count": in_progress_count,
+        "pending_count": pending_count,
+        "total_time": total_time,
+    }
+
+    return render(request, "user/dashboard.html", context)
+
+def update_task_timer(request, task_id, action):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return redirect("login")
+
+    user = get_object_or_404(User, pk=user_id)
+    task = get_object_or_404(ToDo, id=task_id, assigned_to=user)
+
+    now = timezone.now()
+
+    if action == "start":
+        if task.status in ["pending", "paused"]:
+            task.start_time = now
+            task.status = "in_progress"
+            messages.success(request, f"Task '{task.title}' started.")
+
+    elif action == "pause":
+        if task.status == "in_progress":
+            if task.start_time:
+                task.time_spent += (now - task.start_time)
+            task.start_time = None
+            task.status = "paused"
+            messages.info(request, f"Task '{task.title}' paused.")
+
+    elif action == "stop":
+        if task.status in ["in_progress", "paused"]:
+            if task.start_time:
+                task.time_spent += (now - task.start_time)
+            task.start_time = None
+            task.status = "stopped"
+            messages.warning(request, f"Task '{task.title}' stopped.")
+
+    elif action == "complete":
+        if task.status in ["in_progress", "paused", "stopped"]:
+            if task.start_time:
+                task.time_spent += (now - task.start_time)
+            task.start_time = None
+            task.status = "completed"
+            messages.success(request, f"Task '{task.title}' completed!")
+
+    task.save()
+    return redirect("user_dashboard")
+
+def complete_tasks(request):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return redirect("login")
+    user = get_object_or_404(User, pk=user_id)
+    tasks = ToDo.objects.filter(assigned_to=user, status="completed")
+    return render(request, "user/completed_tasks.html", {"tasks": tasks})
+
+def incomplete_tasks(request):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return redirect("login")
+    user = get_object_or_404(User, pk=user_id)
+    tasks = ToDo.objects.filter(assigned_to=user, status__in=["pending", "in_progress", "paused"])
+    return render(request, "user/incomplete_tasks.html", {"tasks": tasks})
+
+
+def user_profile(request):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return redirect("login")
+    user = get_object_or_404(User, pk=user_id)
+    if request.method == "POST":
+        username = request.POST.get("username")
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+        if username:
+            user.username = username
+        if email:
+            user.email = email
+        if password:
+            user.password = password
+        user.save()
+        messages.success(request, "Profile updated successfully!")
+        return redirect("user_profile")
+
+    return render(request, "user/profile.html", {"user": user})

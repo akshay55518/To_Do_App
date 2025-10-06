@@ -1,0 +1,37 @@
+{% extends 'admin/dashboard.html' %}
+{% load static %}
+
+{% block title %}Add Project - Admin Dashboard{% endblock %}
+
+{% block admin-main-block %}
+
+<div class="container mx-auto my-8">
+    <h2 class="text-2xl font-bold mb-4">Project: {{ project.name }}</h2>
+
+    {% if tasks %}
+        <table class="min-w-full bg-white border border-gray-300 rounded-lg">
+            <thead>
+                <tr class="bg-gray-100 border-b">
+                    <th class="px-6 py-3 text-left text-gray-700">Task Name</th>
+                    <th class="px-6 py-3 text-left text-gray-700">Assigned To</th>
+                    <!-- <th class="px-6 py-3 text-left text-gray-700">Due Date</th> -->
+                    <th class="px-6 py-3 text-left text-gray-700">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks %}
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-6 py-4 font-semibold">{{ task.title }}</td>
+                        <td class="px-6 py-4">{{ task.assigned_to.username }}</td>
+                        <!-- <td class="px-6 py-4">{{ task.due_date|date:"M d, Y" }}</td> -->
+                        <td class="px-6 py-4">{{ task.status }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="text-gray-500 mt-4">No tasks found for this project.</p>
+    {% endif %}
+</div>
+
+{% endblock admin-main-block %} 
